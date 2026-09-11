@@ -377,12 +377,14 @@ export default function CreateDeal() {
         navigate(`/deals/${newDealId}`);
       }, 1200);
     } catch (err) {
-      console.error('[CreateDeal] ❌ Error:', err.message, err);
-      const msg =
-        err.message ||
-        (err.data?.errors ? err.data.errors.join(', ') : null) ||
-        'Failed to create deal. Please check your connection and try again.';
-      setError(msg);
+      console.error('[CreateDeal] ❌ Error:', err);
+      let msg = err.message || 'Failed to create deal. Please check your connection and try again.';
+      if (err.data?.errors && Array.isArray(err.data.errors)) {
+        msg = err.data.errors.join(', ');
+      } else if (err.data?.message) {
+        msg = err.data.message;
+      }
+      setError(`[DEBUG API ERROR] ${msg}`);
     } finally {
       setLoading(false);
     }

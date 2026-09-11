@@ -19,6 +19,8 @@ import StatCard from '../../components/ui/StatCard';
 import Button from '../../components/ui/Button';
 import Card, { CardHeader, CardTitle } from '../../components/ui/Card';
 import StatusBadge from '../../components/ui/StatusBadge';
+import dealService from '../../services/dealService';
+import transactionService from '../../services/transactionService';
 import { buyerDashboardData, recentDeals } from '../../data/mockData';
 
 export default function BuyerDashboard() {
@@ -29,16 +31,44 @@ export default function BuyerDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let custom = [];
-    try {
-      custom = JSON.parse(localStorage.getItem('settlex_custom_deals') || '[]');
-    } catch {
-      custom = [];
-    }
+    async function loadRealData() {
+      setLoading(true);
+      try {
+        const [dealsRes] = await Promise.all([
+          dealService.getDeals().catch(() => null),
+        ]);
 
-    setData(buyerDashboardData);
-    setDeals([...custom, ...recentDeals]);
-    setLoading(false);
+        const realDeals = dealsRes?.data?.deals || (Array.isArray(dealsRes?.data) ? dealsRes.data : []);
+
+        let custom = [];
+        try {
+          custom = JSON.parse(localStorage.getItem('settlex_custom_deals') || '[]');
+        } catch {
+          custom = [];
+        }
+
+        const combined = [...custom, ...realDeals];
+        const allDeals = combined.length > 0 ? combined : recentDeals;
+        setDeals(allDeals);
+
+        const totalLocked = allDeals.reduce((sum, d) => sum + (d.escrow?.locked || 0), 0);
+        const totalReleased = allDeals.reduce((sum, d) => sum + (d.escrow?.released || 0), 0);
+        const activeDisputes = allDeals.filter((d) => d.status === 'DISPUTED').length;
+
+        setData({
+          lockedAmount: totalLocked || buyerDashboardData.lockedAmount,
+          releasedAmount: totalReleased || buyerDashboardData.releasedAmount,
+          activeDisputes: activeDisputes || buyerDashboardData.activeDisputes,
+          activeDealsCount: allDeals.filter((d) => d.status === 'IN_PROGRESS').length || buyerDashboardData.activeDealsCount,
+        });
+      } catch {
+        setData(buyerDashboardData);
+        setDeals(recentDeals);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadRealData();
   }, []);
 
   if (loading || !data) {

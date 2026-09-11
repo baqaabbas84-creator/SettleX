@@ -35,11 +35,7 @@ export default function TrustProfile() {
 
     try {
       const res = await trustService.getMyTrustProfile().catch(() => null);
-      let data = null;
-
-      if (res?.data && typeof res.data === 'object') {
-        data = res.data;
-      }
+      let data = res?.data?.profile || (res?.data && typeof res.data === 'object' && !res.data.profile ? res.data : null);
 
       if (!data) {
         // Representative trust data
