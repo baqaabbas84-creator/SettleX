@@ -1,0 +1,142 @@
+/**
+ * Application-wide constants.
+ * Enums, state machines, scoring weights — all live here.
+ */
+
+// ── User / Business ──────────────────────────────────────────
+const ROLES = Object.freeze({
+  BUYER: 'BUYER',
+  SELLER: 'SELLER',
+  ADMIN: 'ADMIN',
+});
+
+const VERIFICATION_STATUS = Object.freeze({
+  PENDING: 'PENDING',
+  VERIFIED: 'VERIFIED',
+  REJECTED: 'REJECTED',
+});
+
+// ── Deal ─────────────────────────────────────────────────────
+const DEAL_STATUS = Object.freeze({
+  DRAFT: 'DRAFT',
+  PENDING_ACCEPTANCE: 'PENDING_ACCEPTANCE',
+  ACCEPTED: 'ACCEPTED',
+  IN_PROGRESS: 'IN_PROGRESS',
+  COMPLETED: 'COMPLETED',
+  CANCELLED: 'CANCELLED',
+  DISPUTED: 'DISPUTED',
+});
+
+// ── Escrow / Milestone State Machine ─────────────────────────
+const MILESTONE_STATUS = Object.freeze({
+  CREATED: 'CREATED',
+  FUNDED: 'FUNDED',
+  LOCKED: 'LOCKED',
+  MILESTONE_IN_PROGRESS: 'MILESTONE_IN_PROGRESS',
+  EVIDENCE_SUBMITTED: 'EVIDENCE_SUBMITTED',
+  UNDER_REVIEW: 'UNDER_REVIEW',
+  APPROVED: 'APPROVED',
+  RELEASED: 'RELEASED',
+  DISPUTED: 'DISPUTED',
+  HUMAN_REVIEW: 'HUMAN_REVIEW',
+  REFUNDED: 'REFUNDED',
+});
+
+/**
+ * Allowed state transitions.
+ * Key = current state  →  Value = Set of allowed next states.
+ */
+const MILESTONE_TRANSITIONS = Object.freeze({
+  [MILESTONE_STATUS.CREATED]:               [MILESTONE_STATUS.FUNDED],
+  [MILESTONE_STATUS.FUNDED]:                [MILESTONE_STATUS.LOCKED],
+  [MILESTONE_STATUS.LOCKED]:                [MILESTONE_STATUS.MILESTONE_IN_PROGRESS],
+  [MILESTONE_STATUS.MILESTONE_IN_PROGRESS]: [MILESTONE_STATUS.EVIDENCE_SUBMITTED],
+  [MILESTONE_STATUS.EVIDENCE_SUBMITTED]:    [MILESTONE_STATUS.UNDER_REVIEW, MILESTONE_STATUS.DISPUTED],
+  [MILESTONE_STATUS.UNDER_REVIEW]:          [MILESTONE_STATUS.APPROVED, MILESTONE_STATUS.DISPUTED],
+  [MILESTONE_STATUS.APPROVED]:              [MILESTONE_STATUS.RELEASED],
+  [MILESTONE_STATUS.DISPUTED]:              [MILESTONE_STATUS.HUMAN_REVIEW],
+  [MILESTONE_STATUS.HUMAN_REVIEW]:          [MILESTONE_STATUS.RELEASED, MILESTONE_STATUS.REFUNDED],
+  [MILESTONE_STATUS.RELEASED]:              [],   // terminal
+  [MILESTONE_STATUS.REFUNDED]:              [],   // terminal
+});
+
+// ── Transactions ─────────────────────────────────────────────
+const TRANSACTION_TYPES = Object.freeze({
+  FUND: 'FUND',
+  RELEASE: 'RELEASE',
+  REFUND: 'REFUND',
+  HOLD: 'HOLD',
+});
+
+const TRANSACTION_STATUS = Object.freeze({
+  PENDING: 'PENDING',
+  COMPLETED: 'COMPLETED',
+  FAILED: 'FAILED',
+});
+
+// ── Evidence ─────────────────────────────────────────────────
+const EVIDENCE_TYPES = Object.freeze({
+  INVOICE: 'INVOICE',
+  RECEIPT: 'RECEIPT',
+  DELIVERY_DOCUMENT: 'DELIVERY_DOCUMENT',
+  OTHER: 'OTHER',
+});
+
+const EVIDENCE_STATUS = Object.freeze({
+  PENDING: 'PENDING',
+  VERIFIED: 'VERIFIED',
+  REJECTED: 'REJECTED',
+  PROCESSING: 'PROCESSING',
+});
+
+// ── Dispute ──────────────────────────────────────────────────
+const DISPUTE_STATUS = Object.freeze({
+  OPEN: 'OPEN',
+  UNDER_REVIEW: 'UNDER_REVIEW',
+  RESOLVED: 'RESOLVED',
+  REJECTED: 'REJECTED',
+});
+
+// ── Trust Score Weights (configurable) ───────────────────────
+const TRUST_WEIGHTS = Object.freeze({
+  SUCCESSFUL_COMPLETION: 0.40,
+  ON_TIME_DELIVERY:      0.20,
+  DISPUTE_RATE:          0.20,
+  CANCELLATION_RATE:     0.10,
+  RESPONSE_BEHAVIOUR:    0.10,
+});
+
+const TRUST_MINIMUM_DEALS = 3; // below this → "New / Insufficient History"
+
+// ── Audit Log Actions ────────────────────────────────────────
+const AUDIT_ACTIONS = Object.freeze({
+  LOGIN: 'LOGIN',
+  REGISTER: 'REGISTER',
+  DEAL_CREATED: 'DEAL_CREATED',
+  DEAL_ACCEPTED: 'DEAL_ACCEPTED',
+  DEAL_REJECTED: 'DEAL_REJECTED',
+  MILESTONE_CREATED: 'MILESTONE_CREATED',
+  EVIDENCE_SUBMITTED: 'EVIDENCE_SUBMITTED',
+  MILESTONE_APPROVED: 'MILESTONE_APPROVED',
+  MILESTONE_RELEASED: 'MILESTONE_RELEASED',
+  MILESTONE_REFUNDED: 'MILESTONE_REFUNDED',
+  DISPUTE_CREATED: 'DISPUTE_CREATED',
+  DISPUTE_RESOLVED: 'DISPUTE_RESOLVED',
+  VERIFICATION_CHANGED: 'VERIFICATION_CHANGED',
+});
+
+module.exports = {
+  ROLES,
+  VERIFICATION_STATUS,
+  DEAL_STATUS,
+  MILESTONE_STATUS,
+  MILESTONE_TRANSITIONS,
+  TRANSACTION_TYPES,
+  TRANSACTION_STATUS,
+  EVIDENCE_TYPES,
+  EVIDENCE_STATUS,
+  DISPUTE_STATUS,
+  TRUST_WEIGHTS,
+  TRUST_MINIMUM_DEALS,
+  AUDIT_ACTIONS,
+};
