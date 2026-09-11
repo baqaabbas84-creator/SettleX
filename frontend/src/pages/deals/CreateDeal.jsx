@@ -384,7 +384,7 @@ export default function CreateDeal() {
       } else if (err.data?.message) {
         msg = err.data.message;
       }
-      setError(`[DEBUG API ERROR] ${msg}`);
+      setError(msg);
     } finally {
       setLoading(false);
     }
