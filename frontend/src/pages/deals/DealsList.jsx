@@ -51,13 +51,7 @@ export default function DealsList() {
     try {
       // 1. Fetch from real backend API
       const response = await dealService.getDeals();
-      let fetched = [];
-
-      if (response?.data && Array.isArray(response.data)) {
-        fetched = response.data;
-      } else if (Array.isArray(response)) {
-        fetched = response;
-      }
+      let fetched = response?.data?.deals || (Array.isArray(response?.data) ? response.data : (Array.isArray(response) ? response : []));
 
       // 2. Fetch locally stored user deals
       let customDeals = [];

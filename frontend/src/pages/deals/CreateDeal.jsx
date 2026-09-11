@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import dealService from '../../services/dealService';
-import milestoneService from '../../services/milestoneService';
+import apiClient from '../../services/api';
 import {
   Handshake,
   Plus,
@@ -19,8 +19,8 @@ import {
 } from 'lucide-react';
 import Button from '../../components/ui/Button';
 
-// Verified Demo Sellers for MSME deals
-const SUGGESTED_SELLERS = [
+// Fallback demo sellers (used only when backend has no SELLER accounts yet)
+const FALLBACK_SELLERS = [
   { id: 'usr_seller_001', name: 'Priya Sharma', company: 'Sharma Furniture Works', trustScore: 87 },
   { id: 'usr_seller_002', name: 'Amit Patel', company: 'MetalCraft Fabrications', trustScore: 92 },
   { id: 'usr_seller_003', name: 'Vikram Singh', company: 'Apex Industrial Supplies', trustScore: 78 },
@@ -34,13 +34,51 @@ export default function CreateDeal() {
   const [aiLoading, setAiLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [sellers, setSellers] = useState(FALLBACK_SELLERS);
+  const [sellersLoading, setSellersLoading] = useState(true);
+
+  // Load real sellers from backend
+  useEffect(() => {
+    const loadSellers = async () => {
+      setSellersLoading(true);
+      try {
+        const res = await apiClient.get('/api/users?role=SELLER&limit=50');
+        const backendSellers = res?.data?.users || res?.users || [];
+        if (backendSellers.length > 0) {
+          const mapped = backendSellers.map((s) => ({
+            id: s._id || s.id,
+            name: s.name,
+            company: s.businessName || s.company || s.name,
+            trustScore: s.trustScore || 0,
+            isReal: true,
+          }));
+          setSellers(mapped);
+          setFormData((prev) => ({
+            ...prev,
+            sellerId: mapped[0].id,
+            sellerCompany: mapped[0].company,
+          }));
+          console.log('[CreateDeal] Loaded', mapped.length, 'real sellers from backend');
+        } else {
+          console.log('[CreateDeal] No sellers in backend yet — using demo sellers as fallback');
+          setSellers(FALLBACK_SELLERS);
+        }
+      } catch (err) {
+        console.warn('[CreateDeal] Could not fetch sellers:', err.message, '— using demo sellers');
+        setSellers(FALLBACK_SELLERS);
+      } finally {
+        setSellersLoading(false);
+      }
+    };
+    loadSellers();
+  }, []);
 
   // Form State
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    sellerId: SUGGESTED_SELLERS[0].id,
-    sellerCompany: SUGGESTED_SELLERS[0].company,
+    sellerId: FALLBACK_SELLERS[0].id,
+    sellerCompany: FALLBACK_SELLERS[0].company,
     customSellerEmail: '',
     totalAmount: '',
     currency: 'INR',
@@ -89,7 +127,7 @@ export default function CreateDeal() {
 
   const handleSellerSelect = (e) => {
     const sId = e.target.value;
-    const found = SUGGESTED_SELLERS.find((s) => s.id === sId);
+    const found = sellers.find((s) => s.id === sId);
     setFormData((prev) => ({
       ...prev,
       sellerId: sId,
@@ -206,6 +244,10 @@ export default function CreateDeal() {
     e.preventDefault();
     setError('');
 
+    console.log('[CreateDeal] ── Submit triggered ──');
+    console.log('[CreateDeal] JWT exists:', !!localStorage.getItem('settlex_token'));
+    console.log('[CreateDeal] User:', user?.id, user?.role);
+
     // Strict Validations
     if (!formData.title.trim()) {
       setError('Please enter a descriptive deal title.');
@@ -245,82 +287,89 @@ export default function CreateDeal() {
     setLoading(true);
 
     const dealPayload = {
-      title: formData.title,
-      description: formData.description,
+      title: formData.title.trim(),
+      description: formData.description.trim(),
       sellerId: formData.sellerId,
       totalAmount: dealTotal,
       currency: formData.currency,
       milestones: milestones.map((m) => ({
-        title: m.title,
-        description: m.description,
+        title: m.title.trim(),
+        description: m.description?.trim() || '',
         amount: parseFloat(m.amount),
         dueDate: m.dueDate || null,
-        conditions: m.conditions,
-        status: 'CREATED',
+        conditions: m.conditions?.trim() || '',
       })),
     };
+
+    console.log('[CreateDeal] Request URL: POST', `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/deals`);
+    console.log('[CreateDeal] Payload:', JSON.stringify({
+      title: dealPayload.title,
+      sellerId: dealPayload.sellerId,
+      totalAmount: dealPayload.totalAmount,
+      currency: dealPayload.currency,
+      milestoneCount: dealPayload.milestones.length,
+    }));
 
     try {
       const response = await dealService.createDeal(dealPayload);
 
-      // Save to local cache so user can browse and interact immediately
+      console.log('[CreateDeal] Response status: success');
+      console.log('[CreateDeal] Response body:', JSON.stringify(response));
+
+      // Extract the real deal ID from the backend response
+      // Backend returns: { success: true, data: { deal: { _id, ... } } }
       const newDealId =
-        response?.data?.id ||
+        response?.data?.deal?._id ||
+        response?.data?.deal?.id ||
         response?.data?._id ||
-        'deal_' + Date.now();
+        response?.data?.id ||
+        response?._id ||
+        response?.id;
 
-      const createdDeal = {
-        id: newDealId,
-        _id: newDealId,
-        title: formData.title,
-        description: formData.description,
-        totalAmount: dealTotal,
-        currency: formData.currency,
-        status: 'PENDING_ACCEPTANCE',
-        buyer: {
-          id: user?.id || 'usr_buyer_001',
-          name: user?.name || 'Buyer',
-          company: user?.company || 'Buyer Trading Co.',
-        },
-        seller: {
-          id: formData.sellerId,
-          name:
-            SUGGESTED_SELLERS.find((s) => s.id === formData.sellerId)?.name ||
-            'Selected Seller',
-          company:
-            formData.sellerCompany ||
-            SUGGESTED_SELLERS.find((s) => s.id === formData.sellerId)?.company ||
-            'Seller Enterprise',
-        },
-        escrow: {
-          locked: 0,
-          released: 0,
-          refunded: 0,
-        },
-        milestones: milestones.map((m, idx) => ({
-          id: `ms_${newDealId}_${idx + 1}`,
-          title: m.title,
-          description: m.description,
-          amount: parseFloat(m.amount),
-          dueDate: m.dueDate,
-          conditions: m.conditions,
-          status: 'CREATED',
-          evidence: [],
-        })),
-        createdAt: new Date().toISOString(),
-      };
+      if (!newDealId) {
+        console.warn('[CreateDeal] Backend did not return a deal ID. Response:', response);
+        throw new Error('Deal was not saved properly — no deal ID returned from server.');
+      }
 
-      // Store in local storage for seamless persistence
+      console.log('[CreateDeal] ✅ Deal created with ID:', newDealId);
+
+      // Cache in localStorage as a supplemental UI layer
+      // (does NOT replace backend — only speeds up UI rendering)
       try {
-        const existing = JSON.parse(
-          localStorage.getItem('settlex_custom_deals') || '[]'
-        );
-        localStorage.setItem(
-          'settlex_custom_deals',
-          JSON.stringify([createdDeal, ...existing])
-        );
+        const selectedSeller = sellers.find((s) => s.id === formData.sellerId);
+        const cachedDeal = {
+          id: newDealId,
+          _id: newDealId,
+          title: formData.title,
+          description: formData.description,
+          totalAmount: dealTotal,
+          currency: formData.currency,
+          status: 'PENDING_ACCEPTANCE',
+          buyer: { id: user?.id, name: user?.name, company: user?.company || '' },
+          seller: {
+            id: formData.sellerId,
+            name: selectedSeller?.name || 'Seller',
+            company: selectedSeller?.company || formData.sellerCompany || '',
+          },
+          escrow: { locked: 0, released: 0, refunded: 0 },
+          milestones: milestones.map((m, idx) => ({
+            id: `ms_${newDealId}_${idx + 1}`,
+            title: m.title,
+            description: m.description,
+            amount: parseFloat(m.amount),
+            dueDate: m.dueDate,
+            conditions: m.conditions,
+            status: 'CREATED',
+            evidence: [],
+          })),
+          createdAt: new Date().toISOString(),
+          _source: 'backend', // marks this as a confirmed backend deal
+        };
+        const existing = JSON.parse(localStorage.getItem('settlex_custom_deals') || '[]');
+        const filtered = existing.filter((d) => d._id !== newDealId); // dedupe
+        localStorage.setItem('settlex_custom_deals', JSON.stringify([cachedDeal, ...filtered]));
       } catch {
-        // ignore
+        // ignore cache errors — not critical
       }
 
       setSuccess(true);
@@ -328,7 +377,14 @@ export default function CreateDeal() {
         navigate(`/deals/${newDealId}`);
       }, 1200);
     } catch (err) {
-      setError(err.message || 'Failed to create deal. Please verify connection to backend.');
+      console.error('[CreateDeal] ❌ Error:', err);
+      let msg = err.message || 'Failed to create deal. Please check your connection and try again.';
+      if (err.data?.errors && Array.isArray(err.data.errors)) {
+        msg = err.data.errors.join(', ');
+      } else if (err.data?.message) {
+        msg = err.data.message;
+      }
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -414,17 +470,22 @@ export default function CreateDeal() {
               <label className="block text-sm font-medium text-surface-700 mb-1.5">
                 Contracted Seller <span className="text-danger-500">*</span>
               </label>
-              <select
+  <select
                 name="sellerId"
                 value={formData.sellerId}
                 onChange={handleSellerSelect}
-                className="w-full px-4 py-2.5 rounded-lg border border-surface-300 text-surface-900 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all bg-white"
+                disabled={sellersLoading}
+                className="w-full px-4 py-2.5 rounded-lg border border-surface-300 text-surface-900 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all bg-white disabled:opacity-60"
               >
-                {SUGGESTED_SELLERS.map((seller) => (
-                  <option key={seller.id} value={seller.id}>
-                    {seller.company} ({seller.name} — Trust Score: {seller.trustScore})
-                  </option>
-                ))}
+                {sellersLoading ? (
+                  <option>Loading sellers...</option>
+                ) : (
+                  sellers.map((seller) => (
+                    <option key={seller.id} value={seller.id}>
+                      {seller.company} ({seller.name}{seller.trustScore ? ` — Trust: ${seller.trustScore}` : ''})
+                    </option>
+                  ))
+                )}
               </select>
             </div>
 

@@ -21,6 +21,8 @@ import StatCard from '../../components/ui/StatCard';
 import Card, { CardHeader, CardTitle } from '../../components/ui/Card';
 import StatusBadge from '../../components/ui/StatusBadge';
 import Button from '../../components/ui/Button';
+import dealService from '../../services/dealService';
+import transactionService from '../../services/transactionService';
 import { sellerDashboardData, recentDeals } from '../../data/mockData';
 
 export default function SellerDashboard() {
@@ -31,17 +33,49 @@ export default function SellerDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let custom = [];
-    try {
-      custom = JSON.parse(localStorage.getItem('settlex_custom_deals') || '[]');
-    } catch {
-      custom = [];
-    }
+    async function loadRealData() {
+      setLoading(true);
+      try {
+        const [dealsRes] = await Promise.all([
+          dealService.getDeals().catch(() => null),
+        ]);
 
-    setData(sellerDashboardData);
-    setDeals([...custom, ...recentDeals]);
-    setLoading(false);
-  }, []);
+        const realDeals = dealsRes?.data?.deals || (Array.isArray(dealsRes?.data) ? dealsRes.data : []);
+
+        let custom = [];
+        try {
+          custom = JSON.parse(localStorage.getItem('settlex_custom_deals') || '[]');
+        } catch {
+          custom = [];
+        }
+
+        const combined = [...custom, ...realDeals];
+        const allDeals = combined.length > 0 ? combined : recentDeals;
+        setDeals(allDeals);
+
+        const totalLocked = allDeals.reduce((sum, d) => sum + (d.escrow?.locked || 0), 0);
+        const totalReceived = allDeals.reduce((sum, d) => sum + (d.escrow?.released || 0), 0);
+        const pendingMilestones = allDeals.reduce(
+          (sum, d) => sum + (d.milestones?.filter((m) => m.status !== 'RELEASED').length || 0),
+          0
+        );
+
+        setData({
+          lockedInEscrow: totalLocked || sellerDashboardData.lockedInEscrow,
+          fundsReceived: totalReceived || sellerDashboardData.fundsReceived,
+          pendingMilestones: pendingMilestones || sellerDashboardData.pendingMilestones,
+          incomingOrdersCount: allDeals.filter((d) => d.status === 'PENDING_ACCEPTANCE').length || sellerDashboardData.incomingOrdersCount,
+          trustScore: user?.trustScore || sellerDashboardData.trustScore,
+        });
+      } catch {
+        setData(sellerDashboardData);
+        setDeals(recentDeals);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadRealData();
+  }, [user]);
 
   if (loading || !data) {
     return <div className="p-8 text-center text-surface-500">Loading dashboard...</div>;

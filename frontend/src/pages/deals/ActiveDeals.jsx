@@ -46,13 +46,7 @@ export default function ActiveDeals() {
 
     try {
       const res = await dealService.getDeals();
-      let allDeals = [];
-
-      if (res?.data && Array.isArray(res.data)) {
-        allDeals = res.data;
-      } else if (Array.isArray(res)) {
-        allDeals = res;
-      }
+      let allDeals = res?.data?.deals || (Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []));
 
       let customDeals = [];
       try {
@@ -61,32 +55,45 @@ export default function ActiveDeals() {
         customDeals = [];
       }
 
-      const combined = [...customDeals, ...allDeals];
+      // Merge and deduplicate by ID (API deals take precedence)
+      const allDealsMap = new Map();
+      allDeals.forEach((d) => {
+        const key = String(d.id || d._id);
+        if (key) allDealsMap.set(key, d);
+      });
+      customDeals.forEach((d) => {
+        const key = String(d.id || d._id);
+        if (key && !allDealsMap.has(key)) {
+          allDealsMap.set(key, d);
+        }
+      });
+
+      const combined = Array.from(allDealsMap.values());
 
       if (combined.length === 0) {
         combined.push(...recentDeals);
       }
 
-      // Filter to active deals: IN_PROGRESS, ACCEPTED, FUNDED
+      // Map active deals
       const activeOnly = combined.map((d, index) => {
         const total = d.totalAmount || d.amount || 250000;
-        const released = d.escrow?.released ?? total * 0.25;
-        const locked = d.escrow?.locked ?? total - released;
-        const percent = Math.round((released / total) * 100);
+        const released = d.escrow?.released ?? 0;
+        const locked = d.escrow?.locked ?? 0;
+        const percent = total > 0 ? Math.round((released / total) * 100) : 0;
 
         return {
           id: d.id || d._id || `deal_act_${index}`,
           _id: d.id || d._id,
           title: d.title,
-          buyer: d.buyer?.company || d.buyer?.name || (typeof d.buyer === 'string' ? d.buyer : 'Kumar Trading Co.'),
-          seller: d.seller?.company || d.seller?.name || (typeof d.seller === 'string' ? d.seller : 'Sharma Furniture Works'),
+          buyer: d.buyer?.businessName || d.buyer?.company || d.buyer?.name || (typeof d.buyer === 'string' ? d.buyer : 'Kumar Trading Co.'),
+          seller: d.seller?.businessName || d.seller?.company || d.seller?.name || (typeof d.seller === 'string' ? d.seller : 'Sharma Furniture Works'),
           totalAmount: total,
           lockedAmount: locked,
           releasedAmount: released,
           progressPercent: percent,
           currentMilestone: d.currentMilestone || (percent >= 50 ? 'M2: Batch Production QA' : 'M1: Design Approval'),
           nextDueDate: d.nextDueDate || '2026-09-28',
-          status: d.status || 'IN_PROGRESS',
+          status: d.status || 'PENDING_ACCEPTANCE',
           createdAt: d.createdAt || '2026-09-01',
         };
       });
@@ -169,6 +176,7 @@ export default function ActiveDeals() {
             className="px-3 py-2 rounded-lg border border-surface-200 text-sm bg-white"
           >
             <option value="ALL">All Active Statuses</option>
+            <option value="PENDING_ACCEPTANCE">Pending Acceptance</option>
             <option value="IN_PROGRESS">In Progress</option>
             <option value="FUNDED">Funded & Locked</option>
             <option value="ACCEPTED">Accepted</option>
