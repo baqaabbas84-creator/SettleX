@@ -44,17 +44,25 @@ class ApiClient {
       });
 
       if (response.status === 401) {
-        // Token expired or invalid
-        localStorage.removeItem('settlex_token');
-        localStorage.removeItem('settlex_user');
-        window.location.href = '/login';
-        throw new Error('Authentication required');
+        // Only redirect on 401 for protected endpoints, not for login or register attempts
+        const isAuthEndpoint = endpoint.includes('/auth/login') || endpoint.includes('/auth/register');
+        if (!isAuthEndpoint) {
+          localStorage.removeItem('settlex_token');
+          localStorage.removeItem('settlex_user');
+          if (typeof window !== 'undefined' && window.location.pathname !== '/login' && window.location.pathname !== '/register') {
+            window.location.href = '/login';
+          }
+        }
       }
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+        const errorMessage =
+          errorData.message ||
+          (Array.isArray(errorData.errors) ? errorData.errors.join(', ') : null) ||
+          `Request failed with status ${response.status}`;
         throw new ApiError(
-          errorData.message || `Request failed with status ${response.status}`,
+          errorMessage,
           response.status,
           errorData
         );

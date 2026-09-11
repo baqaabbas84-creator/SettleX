@@ -2,12 +2,16 @@ import apiClient from './api';
 
 const evidenceService = {
   // Get evidence for a milestone
-  getEvidence: (dealId, milestoneId) =>
-    apiClient.get(`/api/deals/${dealId}/milestones/${milestoneId}/evidence`),
+  getEvidence: (milestoneId) =>
+    apiClient.get(`/api/evidence/milestone/${milestoneId}`).catch(() => 
+      apiClient.get(`/api/deals/any/milestones/${milestoneId}/evidence`)
+    ),
 
   // Upload evidence (seller)
-  uploadEvidence: (dealId, milestoneId, formData) =>
-    apiClient.post(`/api/deals/${dealId}/milestones/${milestoneId}/evidence`, formData),
+  uploadEvidence: (data) => {
+    // If FormData or JSON
+    return apiClient.post('/api/evidence', data);
+  },
 
   // Get AI verification results for evidence
   getAIVerification: (evidenceId) =>

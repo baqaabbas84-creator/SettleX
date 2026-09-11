@@ -1,20 +1,57 @@
 import apiClient from './api';
 
 const authService = {
-  login: (email, password) =>
-    apiClient.post('/api/auth/login', { email, password }),
+  /**
+   * Log in user
+   * POST /api/auth/login
+   * @param {string} email
+   * @param {string} password
+   */
+  login: async (email, password) => {
+    return await apiClient.post('/api/auth/login', { email, password });
+  },
 
-  register: (data) =>
-    apiClient.post('/api/auth/register', data),
+  /**
+   * Register a new user
+   * POST /api/auth/register
+   * @param {Object} data
+   */
+  register: async (data) => {
+    const payload = {
+      name: data.name,
+      email: data.email,
+      password: data.password,
+      role: data.role || 'BUYER',
+      businessName: data.businessName || data.company || '',
+      company: data.company || data.businessName || '',
+      phone: data.phone || '',
+    };
+    return await apiClient.post('/api/auth/register', payload);
+  },
 
-  getProfile: () =>
-    apiClient.get('/api/auth/profile'),
+  /**
+   * Get current authenticated user
+   * GET /api/auth/me
+   */
+  getMe: async () => {
+    return await apiClient.get('/api/auth/me');
+  },
 
-  updateProfile: (data) =>
-    apiClient.put('/api/auth/profile', data),
+  getProfile: async () => {
+    return await apiClient.get('/api/auth/me');
+  },
 
-  logout: () =>
-    apiClient.post('/api/auth/logout'),
+  updateProfile: async (data) => {
+    return await apiClient.put('/api/auth/profile', data);
+  },
+
+  logout: async () => {
+    try {
+      return await apiClient.post('/api/auth/logout');
+    } catch {
+      return null;
+    }
+  },
 };
 
 export default authService;

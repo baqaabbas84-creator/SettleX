@@ -1,119 +1,188 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import authService from '../services/authService';
 
 const AuthContext = createContext(null);
 
-// Mock users for demo — replace with real API calls
-const DEMO_USERS = {
-  buyer: {
-    id: 'usr_buyer_001',
-    name: 'Rajesh Kumar',
-    email: 'rajesh@kumartrading.in',
-    role: 'BUYER',
-    company: 'Kumar Trading Co.',
-    avatar: null,
-  },
-  seller: {
-    id: 'usr_seller_001',
-    name: 'Priya Sharma',
-    email: 'priya@sharmafurniture.in',
-    role: 'SELLER',
-    company: 'Sharma Furniture Works',
-    avatar: null,
-  },
-  admin: {
-    id: 'usr_admin_001',
-    name: 'Admin User',
-    email: 'admin@settlex.in',
-    role: 'ADMIN',
-    company: 'SettleX Platform',
-    avatar: null,
-  },
+/**
+ * Normalizes user object across backend schema variations
+ * (e.g. Mongoose _id vs id, businessName vs company)
+ */
+const normalizeUser = (userData) => {
+  if (!userData || typeof userData !== 'object') return null;
+  return {
+    ...userData,
+    id: userData.id || userData._id,
+    company: userData.company || userData.businessName || '',
+    businessName: userData.businessName || userData.company || '',
+    role: userData.role || 'BUYER',
+  };
 };
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
+  const [token, setToken] = useState(() => localStorage.getItem('settlex_token') || null);
   const [loading, setLoading] = useState(true);
 
+  // Initialize and verify user session on mount
   useEffect(() => {
-    // Check for stored session
-    const storedToken = localStorage.getItem('settlex_token');
-    const storedUser = localStorage.getItem('settlex_user');
-    if (storedToken && storedUser) {
-      try {
-        setToken(storedToken);
-        setUser(JSON.parse(storedUser));
-      } catch {
-        localStorage.removeItem('settlex_token');
-        localStorage.removeItem('settlex_user');
+    let isMounted = true;
+
+    const initAuth = async () => {
+      const storedToken = localStorage.getItem('settlex_token');
+      const storedUser = localStorage.getItem('settlex_user');
+
+      if (!storedToken) {
+        if (isMounted) setLoading(false);
+        return;
       }
-    }
-    setLoading(false);
+
+      // Populate cached user first to prevent UI flickering
+      if (storedUser) {
+        try {
+          const parsed = JSON.parse(storedUser);
+          if (isMounted) setUser(normalizeUser(parsed));
+        } catch {
+          localStorage.removeItem('settlex_user');
+        }
+      }
+
+      // Verify token with backend: GET /api/auth/me
+      try {
+        const response = await authService.getMe();
+        const verifiedUser = response?.data?.user || response?.data || response?.user;
+
+        if (verifiedUser && typeof verifiedUser === 'object') {
+          const normalized = normalizeUser(verifiedUser);
+          if (isMounted) setUser(normalized);
+          localStorage.setItem('settlex_user', JSON.stringify(normalized));
+        }
+      } catch (err) {
+        // If token is invalid or expired (401/403), invalidate session
+        if (err.status === 401 || err.status === 403) {
+          localStorage.removeItem('settlex_token');
+          localStorage.removeItem('settlex_user');
+          if (isMounted) {
+            setToken(null);
+            setUser(null);
+          }
+        }
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    initAuth();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
+  /**
+   * Real backend login: POST /api/auth/login
+   */
   const login = async (email, password) => {
-    // TODO: Replace with real API call
-    // POST /api/auth/login { email, password }
-    // Returns { token, user }
+    const response = await authService.login(email, password);
 
-    // Demo login logic
-    let demoUser = null;
-    if (email.includes('buyer') || email.includes('rajesh')) {
-      demoUser = DEMO_USERS.buyer;
-    } else if (email.includes('seller') || email.includes('priya')) {
-      demoUser = DEMO_USERS.seller;
-    } else if (email.includes('admin')) {
-      demoUser = DEMO_USERS.admin;
-    } else {
-      // Default to buyer for demo
-      demoUser = DEMO_USERS.buyer;
+    // Extract token and user from backend response structure
+    const receivedToken =
+      response?.data?.token || response?.token || response?.accessToken;
+    const rawUser =
+      response?.data?.user ||
+      response?.user ||
+      (response?.data && typeof response.data === 'object' && !response.data.token ? response.data : null);
+
+    const normalizedUser = normalizeUser(rawUser) || {
+      email,
+      name: email.split('@')[0],
+      role: 'BUYER',
+    };
+
+    if (receivedToken) {
+      setToken(receivedToken);
+      localStorage.setItem('settlex_token', receivedToken);
     }
 
-    const demoToken = 'demo_jwt_' + Date.now();
+    setUser(normalizedUser);
+    localStorage.setItem('settlex_user', JSON.stringify(normalizedUser));
 
-    setUser(demoUser);
-    setToken(demoToken);
-    localStorage.setItem('settlex_token', demoToken);
-    localStorage.setItem('settlex_user', JSON.stringify(demoUser));
-
-    return demoUser;
+    return normalizedUser;
   };
 
-  const register = async (data) => {
-    // TODO: Replace with real API call
-    // POST /api/auth/register { name, email, password, role, company }
-    const newUser = {
-      id: 'usr_' + Date.now(),
-      name: data.name,
-      email: data.email,
-      role: data.role || 'BUYER',
-      company: data.company || '',
-      avatar: null,
+  /**
+   * Real backend registration: POST /api/auth/register
+   */
+  const register = async (formData) => {
+    const response = await authService.register(formData);
+
+    let receivedToken =
+      response?.data?.token || response?.token || response?.accessToken;
+    let rawUser =
+      response?.data?.user ||
+      response?.user ||
+      (response?.data && typeof response.data === 'object' && !response.data.token ? response.data : null);
+
+    // If backend only creates user without returning JWT, attempt auto-login
+    if (!receivedToken && formData.email && formData.password) {
+      try {
+        const loginRes = await authService.login(formData.email, formData.password);
+        receivedToken =
+          loginRes?.data?.token || loginRes?.token || loginRes?.accessToken;
+        if (!rawUser) {
+          rawUser =
+            loginRes?.data?.user ||
+            loginRes?.user ||
+            (loginRes?.data && typeof loginRes.data === 'object' && !loginRes.data.token ? loginRes.data : null);
+        }
+      } catch {
+        // Auto-login failed; user can still sign in manually
+      }
+    }
+
+    const normalizedUser = normalizeUser(rawUser) || {
+      name: formData.name,
+      email: formData.email,
+      role: formData.role || 'BUYER',
+      company: formData.company || formData.businessName || '',
+      businessName: formData.businessName || formData.company || '',
+      phone: formData.phone || '',
     };
-    const demoToken = 'demo_jwt_' + Date.now();
 
-    setUser(newUser);
-    setToken(demoToken);
-    localStorage.setItem('settlex_token', demoToken);
-    localStorage.setItem('settlex_user', JSON.stringify(newUser));
+    if (receivedToken) {
+      setToken(receivedToken);
+      localStorage.setItem('settlex_token', receivedToken);
+    }
 
-    return newUser;
+    setUser(normalizedUser);
+    localStorage.setItem('settlex_user', JSON.stringify(normalizedUser));
+
+    return normalizedUser;
   };
 
-  const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem('settlex_token');
-    localStorage.removeItem('settlex_user');
+  /**
+   * Logout user and clear stored credentials
+   */
+  const logout = async () => {
+    try {
+      await authService.logout();
+    } catch {
+      // Ignore network errors on logout
+    } finally {
+      setUser(null);
+      setToken(null);
+      localStorage.removeItem('settlex_token');
+      localStorage.removeItem('settlex_user');
+    }
   };
 
+  /**
+   * Quick role switcher for testing / demo
+   */
   const switchRole = (role) => {
-    // Demo helper — switch between roles for hackathon demo
-    const key = role.toLowerCase();
-    if (DEMO_USERS[key]) {
-      const demoUser = DEMO_USERS[key];
-      setUser(demoUser);
-      localStorage.setItem('settlex_user', JSON.stringify(demoUser));
+    if (user) {
+      const updated = { ...user, role };
+      setUser(updated);
+      localStorage.setItem('settlex_user', JSON.stringify(updated));
     }
   };
 

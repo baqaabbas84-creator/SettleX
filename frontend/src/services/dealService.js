@@ -21,11 +21,15 @@ const dealService = {
 
   // Accept a deal (seller)
   acceptDeal: (dealId) =>
-    apiClient.post(`/api/deals/${dealId}/accept`),
+    apiClient.patch(`/api/deals/${dealId}/accept`),
 
   // Reject a deal (seller)
   rejectDeal: (dealId, reason) =>
-    apiClient.post(`/api/deals/${dealId}/reject`, { reason }),
+    apiClient.patch(`/api/deals/${dealId}/reject`, { reason }),
+
+  // Get escrow status for a deal
+  getEscrow: (dealId) =>
+    apiClient.get(`/api/deals/${dealId}/escrow`),
 
   // Cancel a deal (buyer)
   cancelDeal: (dealId, reason) =>
@@ -33,7 +37,7 @@ const dealService = {
 
   // Get AI milestone suggestions
   suggestMilestones: (description) =>
-    apiClient.post('/api/deals/suggest-milestones', { description }),
+    apiClient.post('/api/ai/suggest-milestones', { description }),
 };
 
 export default dealService;

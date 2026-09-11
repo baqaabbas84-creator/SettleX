@@ -22,8 +22,9 @@ import {
 
 const BUYER_NAV = [
   { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-  { label: 'Deals', path: '/deals', icon: Handshake },
+  { label: 'My Deals', path: '/deals', icon: Handshake },
   { label: 'Create Deal', path: '/deals/create', icon: PlusCircle },
+  { label: 'Active Deals', path: '/deals/active', icon: CheckSquare },
   { label: 'Transactions', path: '/transactions', icon: Receipt },
   { label: 'Disputes', path: '/disputes', icon: AlertTriangle },
   { label: 'Trust Profile', path: '/trust', icon: Shield },
@@ -32,7 +33,7 @@ const BUYER_NAV = [
 const SELLER_NAV = [
   { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
   { label: 'Incoming Deals', path: '/deals/incoming', icon: InboxIcon },
-  { label: 'Active Deals', path: '/deals', icon: Handshake },
+  { label: 'Active Deals', path: '/deals/active', icon: Handshake },
   { label: 'Evidence', path: '/evidence', icon: FileText },
   { label: 'Transactions', path: '/transactions', icon: Receipt },
   { label: 'Disputes', path: '/disputes', icon: AlertTriangle },

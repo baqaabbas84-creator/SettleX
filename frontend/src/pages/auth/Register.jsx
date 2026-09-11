@@ -11,6 +11,7 @@ export default function Register() {
     password: '',
     role: 'BUYER',
     company: '',
+    phone: '',
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -104,8 +105,13 @@ export default function Register() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-surface-700 mb-1.5">Company Name</label>
+              <label className="block text-sm font-medium text-surface-700 mb-1.5">Company / Business Name</label>
               <input type="text" name="company" value={formData.company} onChange={handleChange} placeholder="Kumar Trading Co." className="w-full px-4 py-2.5 rounded-lg border border-surface-300 text-surface-900 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20" />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-surface-700 mb-1.5">Phone Number (Optional)</label>
+              <input type="tel" name="phone" value={formData.phone} onChange={handleChange} placeholder="+91 98765 43210" className="w-full px-4 py-2.5 rounded-lg border border-surface-300 text-surface-900 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20" />
             </div>
 
             <div>
