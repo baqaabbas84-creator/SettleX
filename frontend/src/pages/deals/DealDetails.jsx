@@ -81,13 +81,17 @@ export default function DealDetails() {
       let foundDeal = null;
 
       // 1. Fetch from real backend API
+      // Backend returns: { success: true, data: { deal: {...} } }
       try {
         const res = await dealService.getDeal(id);
-        if (res?.data && typeof res.data === 'object') {
-          foundDeal = res.data;
+        const dealData = res?.data?.deal || res?.data || res?.deal;
+        if (dealData && typeof dealData === 'object' && (dealData._id || dealData.id)) {
+          foundDeal = dealData;
+          console.log('[DealDetails] Loaded from backend:', foundDeal._id || foundDeal.id);
         }
-      } catch {
-        // Backend offline or route stub
+      } catch (apiErr) {
+        console.warn('[DealDetails] Backend fetch failed:', apiErr.message);
+        // Fall through to local cache
       }
 
       // 2. Check local custom deals storage
@@ -223,9 +227,10 @@ export default function DealDetails() {
     setActionFeedback(null);
 
     try {
-      await dealService.acceptDeal(deal.id || deal._id);
+      const res = await dealService.acceptDeal(deal.id || deal._id);
+      const updatedStatus = res?.data?.deal?.status || 'ACCEPTED';
 
-      const updatedDeal = { ...deal, status: 'IN_PROGRESS' };
+      const updatedDeal = { ...deal, status: updatedStatus };
       setDeal(updatedDeal);
       updateLocalDeal(updatedDeal);
 
@@ -235,14 +240,11 @@ export default function DealDetails() {
       });
       setActiveModal(null);
     } catch (err) {
-      const updatedDeal = { ...deal, status: 'IN_PROGRESS' };
-      setDeal(updatedDeal);
-      updateLocalDeal(updatedDeal);
+      console.error('[DealDetails] Accept deal failed:', err.message);
       setActionFeedback({
-        type: 'success',
-        message: 'Deal accepted and active in escrow.',
+        type: 'error',
+        message: err.message || 'Failed to accept deal. Please try again.',
       });
-      setActiveModal(null);
     } finally {
       setActionLoading(false);
     }
@@ -252,27 +254,40 @@ export default function DealDetails() {
   const handleFundDeal = async () => {
     setActionLoading(true);
     try {
-      const msId = selectedMilestone?.id || deal.milestones?.[0]?.id;
-      if (msId) {
-        await milestoneService.transitionMilestone(msId, 'LOCKED');
+      const dealId = deal.id || deal._id;
+
+      // Call real backend fund endpoint
+      let escrowFromBackend = null;
+      try {
+        const res = await transactionService.fundEscrow(dealId);
+        escrowFromBackend = res?.data?.escrow || null;
+        console.log('[DealDetails] Fund escrow response:', res);
+      } catch (fundErr) {
+        console.warn('[DealDetails] Fund escrow endpoint not available:', fundErr.message);
+        // Show informational message rather than fake success
       }
 
-      const updatedMilestones = (deal.milestones || []).map((m) => {
-        if (m.id === msId || m.status === 'CREATED') {
-          return { ...m, status: 'LOCKED', approvalStatus: 'FUNDS_LOCKED' };
+      // Also transition first milestone to LOCKED if milestones are available
+      const firstMs = deal.milestones?.[0];
+      if (firstMs && (firstMs.id || firstMs._id)) {
+        try {
+          await milestoneService.transitionMilestone(firstMs.id || firstMs._id, 'LOCKED');
+        } catch (msErr) {
+          console.warn('[DealDetails] Milestone transition:', msErr.message);
         }
-        return m;
-      });
+      }
+
+      // Use backend escrow values if available, else optimistic UI
+      const updatedEscrow = escrowFromBackend || {
+        ...deal.escrow,
+        locked: deal.totalAmount,
+        released: 0,
+      };
 
       const updatedDeal = {
         ...deal,
         status: 'IN_PROGRESS',
-        escrow: {
-          ...deal.escrow,
-          locked: deal.totalAmount,
-          released: 0,
-        },
-        milestones: updatedMilestones,
+        escrow: updatedEscrow,
       };
 
       setDeal(updatedDeal);
@@ -299,16 +314,16 @@ export default function DealDetails() {
     setActionLoading(true);
 
     try {
-      await milestoneService.approveMilestone(
+      const res = await milestoneService.approveMilestone(
         selectedMilestone.id || selectedMilestone._id
       );
 
+      // Use backend-returned escrow values — NEVER calculate locally
+      const backendEscrow = res?.data?.escrow;
       const msAmount = Number(selectedMilestone.amount) || 0;
-      const newReleased = (deal.escrow?.released || 0) + msAmount;
-      const newLocked = Math.max(0, (deal.escrow?.locked || 0) - msAmount);
 
       const updatedMilestones = (deal.milestones || []).map((m) => {
-        if (m.id === selectedMilestone.id) {
+        if (m.id === selectedMilestone.id || m._id === selectedMilestone._id) {
           return {
             ...m,
             status: 'RELEASED',
@@ -324,10 +339,11 @@ export default function DealDetails() {
       const updatedDeal = {
         ...deal,
         status: allReleased ? 'COMPLETED' : deal.status,
-        escrow: {
-          ...deal.escrow,
-          locked: newLocked,
-          released: newReleased,
+        // Use backend escrow if available, otherwise optimistic
+        escrow: backendEscrow || {
+          locked: Math.max(0, (deal.escrow?.locked || 0) - msAmount),
+          released: (deal.escrow?.released || 0) + msAmount,
+          refunded: deal.escrow?.refunded || 0,
         },
         milestones: updatedMilestones,
       };

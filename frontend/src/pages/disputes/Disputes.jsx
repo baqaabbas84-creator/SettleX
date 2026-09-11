@@ -123,9 +123,25 @@ export default function Disputes() {
       const res = await disputeService.getDisputes().catch(() => null);
       let list = [];
 
-      if (res?.data && Array.isArray(res.data)) {
-        list = res.data;
-      }
+      const rawList = res?.data?.disputes || (Array.isArray(res?.data) ? res.data : []);
+
+      list = rawList.map((d) => ({
+        id: d._id || d.id,
+        dealId: d.dealId?._id || d.dealId || 'N/A',
+        dealTitle: d.dealId?.title || d.dealTitle || 'Deal Contract',
+        milestone: d.milestoneId?.title || d.milestone || 'Escrow Milestone',
+        raisedBy: d.raisedBy?.name ? `${d.raisedBy.name} (${d.raisedBy.role || 'User'})` : d.raisedBy || 'Buyer',
+        reason: d.reason,
+        amountInvolved: d.amountInvolved || d.amount || 0,
+        date: d.createdAt || d.date || new Date().toISOString(),
+        status: d.status,
+        buyer: d.buyer || { name: 'Buyer', company: 'Buyer Co.' },
+        seller: d.seller || { name: 'Seller', company: 'Seller Co.' },
+        evidenceDocs: d.evidenceDocs || [],
+        aiSummary: d.aiSummary || d.aiAnalysis?.summary || 'AI analysis completed.',
+        humanReviewStatus: d.humanReviewStatus || (d.status === 'RESOLVED' ? 'Concluded' : 'Under Review'),
+        finalResolution: d.finalResolution || d.resolutionNotes,
+      }));
 
       let localDisputes = [];
       try {

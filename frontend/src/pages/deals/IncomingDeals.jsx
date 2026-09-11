@@ -57,13 +57,7 @@ export default function IncomingDeals() {
 
     try {
       const res = await dealService.getDeals();
-      let allDeals = [];
-
-      if (res?.data && Array.isArray(res.data)) {
-        allDeals = res.data;
-      } else if (Array.isArray(res)) {
-        allDeals = res;
-      }
+      let allDeals = res?.data?.deals || (Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []));
 
       // Merge local deals
       let customDeals = [];

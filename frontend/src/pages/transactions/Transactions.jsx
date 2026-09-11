@@ -105,9 +105,19 @@ export default function Transactions() {
       const res = await transactionService.getTransactions().catch(() => null);
       let list = [];
 
-      if (res?.data && Array.isArray(res.data)) {
-        list = res.data;
-      }
+      const rawList = res?.data?.transactions || (Array.isArray(res?.data) ? res.data : []);
+      
+      list = rawList.map((t) => ({
+        id: t._id || t.id,
+        dealId: t.dealId?._id || t.dealId || 'N/A',
+        dealTitle: t.dealId?.title || t.dealTitle || 'Deal Contract',
+        milestone: t.milestoneId?.title || t.milestone || 'Escrow Operation',
+        type: t.type,
+        amount: t.amount,
+        status: t.status || 'COMPLETED',
+        date: t.createdAt || t.date || new Date().toISOString(),
+        description: t.reference || t.description || 'Escrow transaction logged on ledger.',
+      }));
 
       const merged = [...list, ...INITIAL_TRANSACTIONS];
 

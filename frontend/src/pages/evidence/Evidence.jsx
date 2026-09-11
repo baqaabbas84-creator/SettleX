@@ -146,9 +146,28 @@ export default function Evidence() {
       const res = await evidenceService.getEvidence('deal_001').catch(() => null);
       let list = [];
 
-      if (res?.data && Array.isArray(res.data)) {
-        list = res.data;
-      }
+      const rawList = res?.data?.evidence || (Array.isArray(res?.data) ? res.data : []);
+
+      list = rawList.map((e) => ({
+        id: e._id || e.id,
+        dealId: e.dealId?._id || e.dealId || 'deal_001',
+        dealTitle: e.dealId?.title || e.dealTitle || '500 Wooden Chairs — Order',
+        milestone: e.milestoneId?.title || e.milestone || 'Escrow Milestone',
+        type: e.type || 'INVOICE',
+        filename: e.fileName || e.filename || 'uploaded_document.pdf',
+        fileSize: e.fileSize || '1.2 MB',
+        uploadedBy: e.uploadedBy?.name ? `${e.uploadedBy.name} (${e.uploadedBy.role || 'Seller'})` : 'Seller',
+        uploadDate: e.createdAt || e.uploadDate || new Date().toISOString(),
+        status: e.status || 'VERIFIED',
+        aiData: e.aiResult || e.aiData || {
+          orderId: `ORD-${(e._id || '9912').slice(-4)}`,
+          seller: e.uploadedBy?.name || 'Seller Org',
+          quantity: '500 Units',
+          date: new Date().toISOString().split('T')[0],
+          confidence: 96.5,
+          extractedAmount: '₹2,50,000',
+        },
+      }));
 
       // Merge local storage items
       let localItems = [];
