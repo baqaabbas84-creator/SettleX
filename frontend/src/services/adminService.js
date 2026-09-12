@@ -16,25 +16,25 @@ const adminService = {
     return apiClient.get(`/api/admin/deals${query ? `?${query}` : ''}`);
   },
 
-  // Escrow overview
+  // Escrow overview — backend: GET /api/admin/escrow (not /escrow/overview)
   getEscrowOverview: () =>
-    apiClient.get('/api/admin/escrow/overview'),
+    apiClient.get('/api/admin/escrow'),
 
-  // Disputes queue
+  // Disputes queue — backend: GET /api/admin/disputes (not /disputes/queue)
   getDisputeQueue: () =>
-    apiClient.get('/api/admin/disputes/queue'),
+    apiClient.get('/api/admin/disputes'),
 
-  // Evidence review queue
+  // Evidence review queue — no specific backend endpoint, use disputes
   getEvidenceQueue: () =>
-    apiClient.get('/api/admin/evidence/queue'),
+    apiClient.get('/api/admin/disputes'),
 
-  // Analytics
+  // Analytics — not yet implemented on backend
   getAnalytics: (params = {}) => {
     const query = new URLSearchParams(params).toString();
-    return apiClient.get(`/api/admin/analytics${query ? `?${query}` : ''}`);
+    return apiClient.get(`/api/admin/deals${query ? `?${query}` : ''}`);
   },
 
-  // Audit logs
+  // Audit logs — backend: GET /api/admin/audit-logs
   getAuditLogs: (params = {}) => {
     const query = new URLSearchParams(params).toString();
     return apiClient.get(`/api/admin/audit-logs${query ? `?${query}` : ''}`);

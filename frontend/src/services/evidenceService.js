@@ -1,25 +1,33 @@
 import apiClient from './api';
 
 const evidenceService = {
-  // Get evidence for a milestone
+  // Get evidence for a milestone — backend: GET /api/evidence/milestone/:milestoneId
   getEvidence: (milestoneId) =>
-    apiClient.get(`/api/evidence/milestone/${milestoneId}`).catch(() => 
-      apiClient.get(`/api/deals/any/milestones/${milestoneId}/evidence`)
-    ),
+    apiClient.get(`/api/evidence/milestone/${milestoneId}`),
 
-  // Upload evidence (seller)
+  // Upload evidence (seller) — backend: POST /api/evidence (multipart or JSON)
   uploadEvidence: (data) => {
-    // If FormData or JSON
+    // If FormData (file upload), use as-is
+    if (data instanceof FormData) {
+      return apiClient.post('/api/evidence', data);
+    }
+    // If plain object (no actual file), send as JSON
     return apiClient.post('/api/evidence', data);
   },
 
-  // Get AI verification results for evidence
-  getAIVerification: (evidenceId) =>
-    apiClient.get(`/api/evidence/${evidenceId}/verification`),
+  // Get a single evidence item — backend: GET /api/evidence/:id
+  getEvidenceById: (evidenceId) =>
+    apiClient.get(`/api/evidence/${evidenceId}`),
 
-  // Request AI re-verification
+  // Get AI verification results — embedded in evidence.aiResult, no separate endpoint
+  getAIVerification: (evidenceId) =>
+    apiClient.get(`/api/evidence/${evidenceId}`).then(res => ({
+      data: { aiResult: res?.data?.evidence?.aiResult || null }
+    })),
+
+  // Request AI re-verification — not implemented yet, graceful fallback
   requestVerification: (evidenceId) =>
-    apiClient.post(`/api/evidence/${evidenceId}/verify`),
+    Promise.resolve({ data: { message: 'Re-verification not yet available' } }),
 };
 
 export default evidenceService;
