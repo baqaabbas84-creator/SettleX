@@ -1,328 +1,447 @@
 # SettleX
 
-### Trust Every Deal. Settle Every Milestone.
+## Trust Every Deal. Settle Every Milestone.
 
-SettleX is a **Digital Escrow and Trust Platform for MSME Transactions** designed to make business transactions safer, more transparent, and milestone-driven.
+SettleX is a Digital Escrow and Trust Platform designed for MSME transactions.
 
-Small businesses often face delayed payments, incomplete deliveries, disputes, unclear agreements, and a lack of trust between buyers and sellers.
+It helps buyers and sellers conduct safer, transparent, and milestone-based business transactions using:
 
-SettleX addresses this problem by combining:
+- Digital Escrow
+- Milestone-Based Payments
+- AI-Powered Document Intelligence
+- Evidence Verification
+- Dispute Resolution
+- Business Trust Scores
+- Transaction Audit Trails
 
-- 🔐 Digital Escrow
-- 🤖 AI-powered Document Intelligence
-- 📊 Trust Scoring
-- 📦 Milestone-based Transactions
-- ⚖️ Structured Dispute Resolution
-- 🧾 Evidence Verification
-- 🔍 Complete Transaction Audit Trail
-
-> **AI understands. Rules decide. Money moves only when conditions are satisfied.**
+> AI understands. Rules decide. Money moves only when conditions are satisfied.
 
 ---
 
-## 🚀 Problem
+# Problem
 
-MSME transactions commonly depend on trust between two parties.
+MSME transactions often depend heavily on trust between buyers and sellers.
 
-A typical transaction may involve:
-
-1. Buyer places an order.
-2. Seller starts production.
-3. Payment is made before completion.
-4. Delivery or quality issues occur.
-5. One party disputes the transaction.
-6. Payment gets delayed or becomes difficult to recover.
-
-This creates risks for both buyers and sellers.
-
-### Major challenges
+Common problems include:
 
 - Delayed payments
 - Incomplete deliveries
-- Quality disputes
-- Unclear milestones
-- Lack of transaction transparency
-- Limited trust history
+- Quantity or quality mismatches
+- Payment disputes
+- Lack of reliable business history
 - Manual document verification
-- Difficult dispute resolution
+- Poor transaction transparency
 
-SettleX introduces a structured digital workflow where every transaction has clearly defined milestones, evidence, and payment conditions.
+For example, a buyer may pay a large amount upfront, while the seller may fail to deliver the agreed quantity or quality.
+
+On the other hand, sellers may complete their work but still face delayed payments because the buyer does not approve the transaction on time.
+
+SettleX addresses this problem by connecting:
+
+Payment + Milestones + Evidence + Trust + Dispute Resolution
+
+into one structured transaction workflow.
 
 ---
 
-# 💡 Our Solution
+# Solution
 
-SettleX creates a controlled transaction environment where money is associated with specific milestones.
+SettleX introduces a milestone-based digital escrow workflow.
 
-Instead of releasing the complete payment upfront:
+Instead of releasing the complete payment upfront, a transaction is divided into multiple milestones.
+
+Each milestone can have:
+
+- Defined payment amount
+- Due date
+- Deliverable
+- Evidence requirements
+- Approval status
+
+The payment associated with a milestone remains locked until the required conditions are satisfied.
+
+## Transaction Flow
+
+Buyer
+  |
+  v
+Create Deal
+  |
+  v
+Fund Escrow
+  |
+  v
+Milestone Starts
+  |
+  v
+Seller Completes Work
+  |
+  v
+Seller Uploads Evidence
+  |
+  v
+AI Document Analysis
+  |
+  v
+Backend Validation
+  |
+  +-------------------+
+  |                   |
+  v                   v
+Approve             Dispute
+  |                   |
+  v                   v
+Release           Human Review
+Payment
+
+---
+
+# Key Features
+
+## 1. Digital Escrow
+
+SettleX locks the payment associated with a deal and releases it only through controlled backend transaction states.
+
+For the hackathon demonstration, SettleX uses a simulated escrow ledger rather than holding real customer funds.
+
+This allows us to demonstrate the complete escrow workflow without handling real money.
+
+---
+
+## 2. Milestone-Based Payments
+
+A large transaction can be divided into smaller milestones.
+
+Example:
+
+| Milestone | Amount |
+|---|---:|
+| Design Approval | Rs. 25,000 |
+| Manufacturing | Rs. 1,25,000 |
+| Delivery | Rs. 1,00,000 |
+| Total | Rs. 2,50,000 |
+
+This reduces the risk of releasing the entire transaction amount before the work is completed.
+
+---
+
+## 3. AI-Powered Document Intelligence
+
+SettleX uses Google Gemini 2.0 Flash for document intelligence.
+
+The AI analyzes uploaded transaction evidence such as:
+
+- Invoices
+- Delivery challans
+- Receipts
+- Production documents
+- Transaction-related evidence
+
+The AI can extract structured information such as:
+
+- Order ID
+- Seller
+- Quantity
+- Date
+- Amount
+- Confidence score
+- Potential inconsistencies
+
+### Example
+
+A seller uploads a delivery document:
 
 ```text
-Buyer
-  │
-  ▼
-Create Deal
-  │
-  ▼
-Fund Escrow
-  │
-  ▼
-Milestone Created
-  │
-  ▼
-Seller Completes Milestone
-  │
-  ▼
-Upload Evidence
-  │
-  ▼
-AI Document Analysis
-  │
-  ▼
+Delivery Challan
+
+Order ID: ORD-1234
+Seller: Sharma Furniture Works
+Quantity: 500 Units
+Amount: Rs. 1,25,000
+Date: 12/09/2026
+
+
+Gemini converts the document into structured information:
+
+{
+  "orderId": "ORD-1234",
+  "seller": "Sharma Furniture Works",
+  "quantity": 500,
+  "amount": 125000,
+  "date": "2026-09-12",
+  "confidence": 96
+}
+
+This structured information is then passed to the backend validation layer.
+
+4. Deterministic Escrow State Machine
+
+The escrow workflow is controlled by backend-defined states.
+
+CREATED
+   |
+   v
+FUNDED
+   |
+   v
+LOCKED
+   |
+   v
+MILESTONE_IN_PROGRESS
+   |
+   v
+EVIDENCE_SUBMITTED
+   |
+   v
+UNDER_REVIEW
+   |
+   v
+APPROVED
+   |
+   v
+RELEASED
+
+
+5. Dispute Resolution
+
+SettleX detects inconsistencies between transaction requirements and submitted evidence.
+
+Example:
+
+Expected Quantity: 500 Units
+Seller Evidence:  500 Units
+Buyer Received:   450 Units
+
+The system identifies:
+
+500 != 450
+
+The corresponding milestone payment remains locked.
+
+AI can generate a concise dispute summary:
+
+Quantity mismatch detected.
+
+Seller evidence indicates 500 units,
+while the buyer reports receiving 450 units.
+
+Further human review is required.
+
+The AI assists the reviewer but does not make the final financial decision.
+
+6. Business Trust Score
+
+SettleX provides a trust profile for businesses based on transaction history.
+
+The trust system can consider:
+
+Factor	Weight
+Successful Completion	40%
+On-Time Completion	20%
+Dispute Rate	20%
+Cancellation Rate	10%
+Response Behaviour	10%
+
+Businesses with insufficient transaction history are shown as:
+
+NEW / INSUFFICIENT HISTORY
+
+This prevents a new business from receiving an unreliable trust score based on limited transaction history.
+
+7. Evidence Management
+
+Sellers can submit evidence for milestone completion.
+
+Supported evidence can include:
+
+-Invoices
+-Delivery receipts
+-Challans
+-Production proof
+-Other transaction documents
+
+Evidence follows this workflow:
+
+Deal
+  |
+  v
+Milestone
+  |
+  v
+Evidence Upload
+  |
+  v
+AI Analysis
+  |
+  v
+Backend Validation
+  |
+  v
 Buyer Review
-  │
-  ├── Approve ──► Release Milestone Payment
-  │
-  └── Dispute ──► Human Review
 
+8. Audit Trail
 
-⭐ Key Features
-🔐 Digital Escrow
+Important transaction events can be recorded for traceability.
 
-Funds remain locked until the required milestone conditions are satisfied.
+Examples include:
 
-SettleX uses a simulated escrow ledger for the hackathon demonstration.
+-Deal creation
+-Deal acceptance
+-Escrow funding
+-Milestone progress
+-Evidence submission
+-AI analysis
+-Approval
+-Dispute creation
+-Settlement
 
-📦 Milestone-Based Payments
+This provides a clear history of what happened during a transaction.
 
-A deal can be divided into multiple milestones with separate:
-
-Amounts
-Due dates
-Deliverables
-Evidence requirements
-Approval states
-🤖 AI Document Intelligence
-
-Gemini AI analyzes uploaded transaction documents and extracts structured information such as:
-
-Order ID
-Seller
-Quantity
-Date
-Amount
-Confidence score
-Potential inconsistencies
-⚖️ Dispute Resolution
-
-Buyers can raise disputes when evidence does not match the expected transaction details.
-
-AI can summarize the dispute and highlight inconsistencies for human review.
-
-📊 Trust Score
-
-Businesses build a trust profile based on transaction history, including:
-
-Successful completions
-On-time completion
-Dispute rate
-Cancellation rate
-Response behaviour
-🧾 Evidence Management
-
-Sellers can upload documents such as:
-
-Invoices
-Delivery receipts
-Challans
-Production evidence
-🔍 Audit Trail
-
-Important transaction events are recorded to provide better transparency and traceability.
-
-👥 Role-Based Access
-
-SettleX supports:
-
+User Roles
 Buyer
+
+Buyers can:
+
+-Create deals
+-Select sellers
+-Define milestones
+-Fund escrow
+-Review evidence
+-Approve milestones
+-Raise disputes
+-View transaction history
+-View business trust profiles
+
 Seller
+
+Sellers can:
+
+-View incoming deals
+-Accept or reject deals
+-Work on milestones
+-Upload evidence
+-Track milestone status
+-View transaction history
+-View trust profiles
+
 Admin
 
-Each role receives appropriate permissions and workflows.
+Admins can:
 
-🧠 AI Safety Architecture
+-Monitor platform activity
+-Review transactions
+-Monitor disputes
+-View trust events
+-Inspect platform activity
 
-A core principle of SettleX is that AI never directly controls money.
+System Architecture
 
-Evidence
-   ↓
-Gemini AI
-   ↓
-Extracted Information
-   ↓
-Deterministic Backend Rules
-   ↓
-Escrow State Machine
-   ↓
-Settlement
-AI does:
-Understand documents
-Extract information
-Detect inconsistencies
-Summarize disputes
-Provide trust insights
-AI does NOT:
-Directly release money
-Directly refund money
-Directly change escrow state
-
-Financial transitions are controlled by deterministic backend rules.
-
-If AI fails, the workflow can continue through manual review.
-
-🔄 Escrow Lifecycle
-CREATED
-   ↓
-FUNDED
-   ↓
-LOCKED
-   ↓
-MILESTONE_IN_PROGRESS
-   ↓
-EVIDENCE_SUBMITTED
-   ↓
-UNDER_REVIEW
-   ↓
-APPROVED
-   ↓
-RELEASED
-Dispute Flow
-EVIDENCE_SUBMITTED
-        ↓
-     DISPUTED
-        ↓
-   HUMAN REVIEW
-      ↙     ↘
- RELEASE    REFUND
-🏗️ Architecture
-                 ┌─────────────────┐
-                 │   React + Vite  │
-                 │    Frontend     │
-                 └────────┬────────┘
-                          │
-                          ▼
-                 ┌─────────────────┐
-                 │  Express REST   │
-                 │      API        │
-                 └────────┬────────┘
-                          │
-          ┌───────────────┼───────────────┐
-          │               │               │
-          ▼               ▼               ▼
-      ┌───────┐       ┌────────┐     ┌──────────┐
-      │ Auth  │       │ Deals  │     │ Evidence │
-      │ JWT   │       │        │     │ Upload   │
-      └───────┘       └────────┘     └─────┬────┘
-                                           │
-                                           ▼
-                                    ┌─────────────┐
-                                    │  Gemini AI  │
-                                    └──────┬──────┘
-                                           │
-                                           ▼
-                                    ┌─────────────┐
-                                    │ Rule Engine │
-                                    └──────┬──────┘
-                                           │
-                                           ▼
-                                    ┌─────────────┐
-                                    │    Escrow   │
-                                    │    Ledger   │
-                                    └──────┬──────┘
-                                           │
-                                           ▼
-                                    ┌─────────────┐
-                                    │   MongoDB   │
-                                    └─────────────┘
-🛠️ Tech Stack
-Frontend
-React
-Vite
-Tailwind CSS
-JavaScript
-Backend
-Node.js
-Express.js
-MongoDB
-Mongoose
-JWT
-REST APIs
-AI
-Google Gemini API
-Document Intelligence
-Evidence Analysis
-Dispute Summarization
-Security
-JWT Authentication
-Role-Based Access Control
-Request Validation
-Rate Limiting
-Audit Logging
-Idempotency Protection
-Backend-controlled Financial Transitions
+                    +--------------------+
+                    |     React UI       |
+                    |    Vite + React    |
+                    +---------+----------+
+                              |
+                              v
+                    +--------------------+
+                    |   Express REST API |
+                    +---------+----------+
+                              |
+            +-----------------+-----------------+
+            |                 |                 |
+            v                 v                 v
+       +----------+      +----------+      +-----------+
+       |   Auth   |      |  Deals   |      | Evidence  |
+       | JWT/RBAC |      |Milestones|      |  Upload   |
+       +----------+      +----------+      +-----+-----+
+                                                |
+                                                v
+                                       +----------------+
+                                       |   Gemini AI    |
+                                       |    Analysis    |
+                                       +-------+--------+
+                                               |
+                                               v
+                                       +----------------+
+                                       | Rule Engine    |
+                                       | + Validation   |
+                                       +-------+--------+
+                                               |
+                                               v
+                                       +----------------+
+                                       | Escrow State   |
+                                       |    Machine     |
+                                       +-------+--------+
+                                               |
+                                               v
+                                       +----------------+
+                                       |    MongoDB     |
+                                       +----------------+
 
 
-🔮 Future Scope
+# 🛠️ Technology Stack
 
-SettleX can be extended with:
+## 🎨 Frontend
 
-Real payment gateway integration
-Production-grade escrow partnerships
-GST invoice verification
-Digital signatures
-UPI/payment reconciliation
-Advanced fraud detection
-Automated business verification
-Multi-language document processing
-MSME credit scoring
-Supplier discovery
-Enterprise integrations
-🌍 Impact
-Buyers
-Lower payment risk
-Transparent milestones
-Evidence-backed approvals
-Structured dispute handling
-Sellers
-Faster milestone payments
-Clear transaction conditions
-Reputation building
-Digital trust history
-MSME Ecosystem
-Better payment confidence
-Reduced disputes
-Improved transparency
-Digital trust infrastructure
-🏆 Vision
+- **React.js** — Component-based user interface
+- **Vite** — Fast frontend development and build tool
+- **Tailwind CSS** — Responsive and modern UI styling
+- **JavaScript (ES6+)** — Application logic
+- **React Router** — Client-side routing
+- **Fetch API** — Frontend-backend communication
 
-SettleX aims to make business transactions:
+## ⚙️ Backend
 
-Verifiable.
-Transparent.
-Milestone-driven.
-Trustworthy.
+- **Node.js** — Backend runtime environment
+- **Express.js** — REST API framework
+- **Mongoose** — MongoDB object modeling
+- **MongoDB** — Database for users, deals, milestones, evidence, transactions and disputes
+- **JWT (JSON Web Tokens)** — Authentication
+- **Express Validator** — API request validation
+- **Multer** — Evidence/document file uploads
 
-Agreement
-    ↓
-Milestones
-    ↓
-Escrow
-    ↓
-Evidence
-    ↓
-AI Understanding
-    ↓
-Rule Validation
-    ↓
-Human Approval
-    ↓
-Settlement
+## 🤖 Artificial Intelligence
+
+- **Google Gemini 2.0 Flash** — AI document intelligence
+- **Gemini API** — Communication between backend and AI model
+- **Structured JSON Extraction** — Converts unstructured documents into usable transaction data
+- **AI Evidence Analysis** — Extracts order ID, seller, quantity, date, amount and confidence
+- **AI Dispute Summarization** — Helps summarize transaction discrepancies
+- **AI Trust Insights** — Provides analytical insights from transaction history
+
+## 🔐 Security
+
+- **JWT Authentication** — Secure user authentication
+- **Role-Based Access Control (RBAC)** — Buyer, Seller and Admin permissions
+- **Express Validator** — Input validation
+- **Rate Limiting** — Protection against excessive API requests
+- **Idempotency Protection** — Prevents duplicate financial operations
+- **Audit Logging** — Tracks important transaction events
+- **Backend-Controlled Escrow** — Financial state transitions cannot be controlled from the frontend
+
+## 💰 Escrow & Transaction Engine
+
+- **Deterministic State Machine** — Controls deal and milestone lifecycle
+- **Milestone-Based Payments** — Payments are associated with specific milestones
+- **Simulated Escrow Ledger** — Demonstrates locked and released funds for the hackathon
+- **Transaction Management** — Tracks financial events and settlement history
+- **Dispute Workflow** — Keeps disputed milestone funds locked until resolution
+
+## 🗄️ Database
+
+- **MongoDB** — Primary application database
+- **Mongoose** — Schema and data modeling
+- **Users Collection** — Buyer, Seller and Admin accounts
+- **Deals Collection** — Transaction agreements
+- **Milestones Collection** — Milestone requirements and status
+- **Evidence Collection** — Uploaded transaction documents and AI analysis
+- **Transactions Collection** — Escrow and settlement records
+- **Disputes Collection** — Transaction dispute records
+- **Trust Events Collection** — Business trust history
+
+## 🔧 Development Tools
+
+- **Git** — Version control
+- **GitHub** — Source code repository and collaboration
+- **VS Code** — Development environment
+- **Postman** — API testing
+- **npm** — Package management
