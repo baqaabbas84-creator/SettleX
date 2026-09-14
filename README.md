@@ -378,70 +378,64 @@ System Architecture
                                        +----------------+
 
 
-# 🛠️ Technology Stack
+🛠️ Technology Stack
 
-## 🎨 Frontend
+🎨 Frontend
+-React.js — Component-based user interface
+-Vite — Fast frontend development and build tool
+-Tailwind CSS — Responsive and modern UI styling
+-JavaScript (ES6+) — Application logic
+-React Router — Client-side routing
+-Fetch API — Frontend-backend communication
 
-- **React.js** — Component-based user interface
-- **Vite** — Fast frontend development and build tool
-- **Tailwind CSS** — Responsive and modern UI styling
-- **JavaScript (ES6+)** — Application logic
-- **React Router** — Client-side routing
-- **Fetch API** — Frontend-backend communication
 
-## ⚙️ Backend
+⚙️ Backend
+-Node.js — Backend runtime environment 
+-Express.js — REST API framework
+-MongoDB — NoSQL database
+-Mongoose — MongoDB object modeling
+-JWT — Secure authentication
+-Express Validator — API request validation
+-Multer — Evidence and document file uploads
 
-- **Node.js** — Backend runtime environment
-- **Express.js** — REST API framework
-- **Mongoose** — MongoDB object modeling
-- **MongoDB** — Database for users, deals, milestones, evidence, transactions and disputes
-- **JWT (JSON Web Tokens)** — Authentication
-- **Express Validator** — API request validation
-- **Multer** — Evidence/document file uploads
+🤖 Artificial Intelligence
+-Google Gemini 2.0 Flash — AI document intelligence
+-Gemini API — Backend communication with the AI model
+-Structured JSON Extraction — Converts unstructured documents into structured transaction data
+-AI Evidence Analysis — Extracts order ID, seller, quantity, date, amount and confidence
+-AI Dispute Summarization — Summarizes transaction discrepancies
+-AI Trust Insights — Provides analytical insights from transaction history
 
-## 🤖 Artificial Intelligence
+🔐 Security
+-JWT Authentication — Secure user authentication
+-Role-Based Access Control (RBAC) — Buyer, Seller and Admin permissions
+-Express Validator — Input validation
+-Rate Limiting — Protection against excessive API requests
+-Idempotency Protection — Prevents duplicate financial operations
+-Audit Logging — Tracks important transaction events
+-Backend-Controlled Escrow — Financial transitions cannot be controlled from the frontend
 
-- **Google Gemini 2.0 Flash** — AI document intelligence
-- **Gemini API** — Communication between backend and AI model
-- **Structured JSON Extraction** — Converts unstructured documents into usable transaction data
-- **AI Evidence Analysis** — Extracts order ID, seller, quantity, date, amount and confidence
-- **AI Dispute Summarization** — Helps summarize transaction discrepancies
-- **AI Trust Insights** — Provides analytical insights from transaction history
+💰 Escrow & Transaction Engine
+-Deterministic State Machine — Controls deal and milestone lifecycle
+-Milestone-Based Payments — Associates payments with specific milestones
+-Simulated Escrow Ledger — Demonstrates locked and released funds for the hackathon
+-Transaction Management — Tracks escrow and settlement history
+-Dispute Workflow — Keeps disputed funds locked until resolution
 
-## 🔐 Security
+🗄️ Database
+-MongoDB — Primary application database
+-Mongoose — Database schema and data modeling
+-Users — Buyer, Seller and Admin accounts
+-Deals — Transaction agreements
+-Milestones — Milestone requirements and statuses
+-Evidence — Uploaded documents and AI analysis
+-Transactions — Escrow and settlement records
+-Disputes — Transaction dispute records
+-Trust Events — Business trust history
 
-- **JWT Authentication** — Secure user authentication
-- **Role-Based Access Control (RBAC)** — Buyer, Seller and Admin permissions
-- **Express Validator** — Input validation
-- **Rate Limiting** — Protection against excessive API requests
-- **Idempotency Protection** — Prevents duplicate financial operations
-- **Audit Logging** — Tracks important transaction events
-- **Backend-Controlled Escrow** — Financial state transitions cannot be controlled from the frontend
-
-## 💰 Escrow & Transaction Engine
-
-- **Deterministic State Machine** — Controls deal and milestone lifecycle
-- **Milestone-Based Payments** — Payments are associated with specific milestones
-- **Simulated Escrow Ledger** — Demonstrates locked and released funds for the hackathon
-- **Transaction Management** — Tracks financial events and settlement history
-- **Dispute Workflow** — Keeps disputed milestone funds locked until resolution
-
-## 🗄️ Database
-
-- **MongoDB** — Primary application database
-- **Mongoose** — Schema and data modeling
-- **Users Collection** — Buyer, Seller and Admin accounts
-- **Deals Collection** — Transaction agreements
-- **Milestones Collection** — Milestone requirements and status
-- **Evidence Collection** — Uploaded transaction documents and AI analysis
-- **Transactions Collection** — Escrow and settlement records
-- **Disputes Collection** — Transaction dispute records
-- **Trust Events Collection** — Business trust history
-
-## 🔧 Development Tools
-
-- **Git** — Version control
-- **GitHub** — Source code repository and collaboration
-- **VS Code** — Development environment
-- **Postman** — API testing
-- **npm** — Package management
+🔧 Development Tools
+-Git — Version control
+-GitHub — Source code hosting and collaboration
+-VS Code — Development environment
+-Postman — API testing
+-npm — Package management
